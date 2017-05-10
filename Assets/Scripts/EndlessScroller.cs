@@ -11,8 +11,10 @@ public class EndlessScroller : MonoBehaviour {
 	//Reference to Wall material for Gradient Effect
 	public Material WallMaterial;
 	private bool isColorTransitioning=false;
-	public Color[] GradientColor;
+	public Color[] WallGradientColor;
+	public Color[] BackgroundGradientColor;
 	private int DecideColor;
+	[Tooltip("After how many collectibles should the color change?")]
 	public float ColorTransitioningInterval;
 
 	//We will switch Patch1 and Patch2 to create dynamic and endless experience
@@ -44,14 +46,14 @@ public class EndlessScroller : MonoBehaviour {
 
 	void Awake(){
 		instance = this;
-		Invoke ("TransitionColor",ColorTransitioningInterval);
 	}
 
 	public void Init(){
 		CurrentPatchLocation = 0;
 		CurrentActivePatch = 1;
-		DecideColor = Random.Range (0,GradientColor.Length);
-		WallMaterial.color = GradientColor [DecideColor];
+		DecideColor = Random.Range (0,WallGradientColor.Length);
+		WallMaterial.color = WallGradientColor [DecideColor];
+		CameraScript.Instance.TheCamera.backgroundColor = BackgroundGradientColor [DecideColor];
 		PreparePrefabs ();
 	}
 
@@ -107,17 +109,17 @@ public class EndlessScroller : MonoBehaviour {
 		}
 	}
 
-	void FixedUpdate(){
-		if (WallMaterial.color != GradientColor[DecideColor] && isColorTransitioning) {
-			WallMaterial.color = Color.Lerp (WallMaterial.color,GradientColor[DecideColor],Time.deltaTime*3);
-		} else if (WallMaterial.color == GradientColor[DecideColor] && isColorTransitioning){
+	void Update(){
+		if (WallMaterial.color != WallGradientColor [DecideColor] && isColorTransitioning) {
+			WallMaterial.color = Color.Lerp (WallMaterial.color, WallGradientColor [DecideColor], Time.deltaTime * 3);
+			CameraScript.Instance.TheCamera.backgroundColor = Color.Lerp (CameraScript.Instance.TheCamera.backgroundColor, BackgroundGradientColor [DecideColor], Time.deltaTime * 3);
+		} else if (WallMaterial.color == WallGradientColor [DecideColor] && isColorTransitioning) {
 			isColorTransitioning = false;
-			Invoke ("TransitionColor",ColorTransitioningInterval);
 		}
 	}
 
-	private void TransitionColor(){
-		DecideColor = Random.Range (0,GradientColor.Length);
+	public void TransitionColor(){
+		DecideColor = Random.Range (0,WallGradientColor.Length);
 		isColorTransitioning = true;
 	}
 

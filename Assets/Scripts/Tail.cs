@@ -21,14 +21,13 @@ public class Tail : MonoBehaviour {
 		}
 	}
 
-	void FixedUpdate(){
+	void Update(){
 		//If it's the first Tail Part
 		if (order == 0) {
 			lookPos = Head.transform.position - transform.position;
 			float rotationZ = Mathf.Atan2(lookPos.y, lookPos.x) * Mathf.Rad2Deg;
 			transform.rotation = Quaternion.Euler(0.0f, 0.0f, rotationZ);
 			transform.position = Vector3.SmoothDamp (transform.position, Head.position, ref movementVelocity, overTime);
-//			transform.position = Vector3.Slerp(transform.position, Head.position,Time.deltaTime*6);
 		} 
 		//If it's any Tail part other the first
 		else {
@@ -36,7 +35,6 @@ public class Tail : MonoBehaviour {
 			float rotationZ = Mathf.Atan2(lookPos.y, lookPos.x) * Mathf.Rad2Deg;
 			transform.rotation = Quaternion.Euler(0.0f, 0.0f, rotationZ);
 			transform.position = Vector3.SmoothDamp (transform.position, TheHeadController.tailParts [order - 1].position, ref movementVelocity, overTime);
-//			transform.position = Vector3.Slerp(transform.position, TheHeadController.tailParts [order - 1].position,Time.deltaTime*6);
 		}
 	}
 }

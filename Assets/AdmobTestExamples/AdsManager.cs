@@ -20,7 +20,7 @@ public class AdsManager : MonoBehaviour {
 			
 		Admob.Instance ().initAdmob (AdMob_BannerID, AdMob_InterstitialID);
 		Admob.Instance ().loadInterstitial ();
-		Admob.Instance ().loadRewardedVideo (AdMob_RewardedVideoID);
+		//Admob.Instance ().loadRewardedVideo (AdMob_RewardedVideoID);
 
 		ShowBanner ();
 	}
@@ -29,12 +29,15 @@ public class AdsManager : MonoBehaviour {
 	{
 		Admob.Instance ().showBannerRelative (AdSize.SmartBanner, AdPosition.BOTTOM_CENTER, 5);
 	}
-
+		
 	public void ShowInterstitial()
 	{
-		if (Admob.Instance ().isInterstitialReady ())
-		{
-			Admob.Instance ().showInterstitial ();
+		int random = (int) Random.Range (0, 3);
+		if (random == 1) {
+			if (Admob.Instance ().isInterstitialReady ()) {
+				Admob.Instance ().showInterstitial ();
+			}
+			Debug.Log ("ADMOB INTERSTITIAL SHOWN");
 		}
 		Admob.Instance ().loadInterstitial ();
 	}

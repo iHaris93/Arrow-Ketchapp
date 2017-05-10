@@ -58,8 +58,7 @@ public class Controller : MonoBehaviour {
 		transform.gameObject.SetActive (true);
 	}
 
-	//Physics based calculation goes in here
-	void FixedUpdate(){
+	void Update(){
 		if (EventsManager.Instance.CurrentScreen == (int)GameState.Gameplay) {
 			if (CurrentForwardSpeed < ForwardSpeed)
 				DoSpeedingEffect();
@@ -74,7 +73,7 @@ public class Controller : MonoBehaviour {
 
 	//Character always moves forward
 	private void MoveForward(){
-		transform.position += transform.up * CurrentForwardSpeed * Time.deltaTime;
+		transform.Translate (transform.up * CurrentForwardSpeed * Time.deltaTime, Space.World);
 	}
 
 	//Character always moves forward
@@ -145,6 +144,7 @@ public class Controller : MonoBehaviour {
 		else if (other.CompareTag("Gem")) {
 			Gamedata.Instance.AddGems (1);
 			AudioManager.Instance.PlayGem ();
+			EndlessScroller.Instance.TransitionColor ();
 			other.transform.gameObject.SetActive(false);
 		}
 		else if (other.CompareTag("Wall")) {

@@ -65,6 +65,7 @@ public class EventsManager : MonoBehaviour {
 			if (Gamedata.Instance.GamePlayedCount < 3)
 				CancelInvoke ("DisableTutorialText");
 			Gamedata.Instance.AddGamePlayedCount(1);
+			AdsManager.Instance.ShowInterstitial ();
 		}
 	}
 
@@ -77,6 +78,7 @@ public class EventsManager : MonoBehaviour {
 			Controller.Instance.Init ();
 			Gamedata.Instance.Init ();
 			EndlessScroller.Instance.Init ();
+			CameraScript.Instance.Init ();
 			CurrentScreen = (int)GameState.Gameplay;
 			Gameover.SetActive (false);
 			Gameplay.SetActive (true);
