@@ -3,28 +3,39 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class Controller : MonoBehaviour {
+	[Header("Movement")]
 	[Tooltip("Turning Angle for the Character")]
 	[Range(1,90)]
 	public int AngleInDegrees;
-	[Tooltip("Desired Forward speed of the Character")]
+	[Tooltip("Desired forward speed of the character")]
 	public float ForwardSpeed;
-	private float CurrentForwardSpeed=0;
+	[Tooltip("Time (in seconds) to accelerate from 0 to ForwardSpeed")]
+	public float AccelerationTime = 2f;
+	[Tooltip("How fast the arrow rotates towards its target angle")]
+	public float TurnSpeed = 6f;
+	[Tooltip("Initial position of the arrow when a run starts")]
+	public Vector3 StartPosition = new Vector3(0f, -5f, 0f);
+
+	private float CurrentForwardSpeed = 0f;
 	private float SpeedingEffect;
-	//Is the Player pressing tap?
-	private bool bool_tap = false;
-	[HideInInspector]
-	public bool isDead = false;
-	//Keeps track of active Tail Part Game Objects
+
+	// Is the player currently holding/tapping the input?
+	private bool isTurningRight = false;
+
+	// Keeps track of active Tail Part Game Objects
 	private int TailCount;
 	public GameObject TheParticlesss;
 
-	//This holds the information on Tail Parts of the Arrow
+	[Header("Tail / Trail")]
+	// This holds the information on Tail Parts of the Arrow
 	[HideInInspector]
 	public List<Transform> tailParts = new List<Transform> ();
-	//Maximum Tail pool count for visual represtation
+	// Maximum Tail pool count for visual representation
 	public int TailPoolCount;
+	[Tooltip("Initial spacing (in world units) between spawned tail segments")]
+	public float TailInitialSpacing = 5f;
 
-	//Useful data members for adding Tail objects to Character's Head (Arrow)
+	// Useful data members for adding Tail objects to Character's Head (Arrow)
 	private Vector3 currentPos;
 	private GameObject theTailPart;
 	public GameObject tailPrefab;
@@ -36,11 +47,14 @@ public class Controller : MonoBehaviour {
 	}
 
 	void Awake(){
+		if (instance != null && instance != this) {
+			Destroy(gameObject);
+			return;
+		}
 		instance = this;
-		//We want the character to speed up in first two seconds to its desired speed
-		//Fixed Update Function runs 50 times a second by default, and if the timestamp is set to 0.02
-		//50 * 2 = 100, we will have the character up to its desired speed in two seconds
-		SpeedingEffect = ForwardSpeed / 100;
+		// Calculate how much speed to add each FixedUpdate so we reach ForwardSpeed in AccelerationTime seconds
+		float stepsToMaxSpeed = Mathf.Max(1f, AccelerationTime / Time.fixedDeltaTime);
+		SpeedingEffect = ForwardSpeed / stepsToMaxSpeed;
 		for (int i = 0; i < TailPoolCount; i++) {
 			//Instantiating all the 15 tail parts in the begining, and then later setting them active and deactive
 			//This optimization technique is called object pooling 
@@ -50,16 +64,16 @@ public class Controller : MonoBehaviour {
 	}
 
 	public void Init(){
-		CurrentForwardSpeed = 0;
+		CurrentForwardSpeed = 0f;
 		TailCount = 0;
-		bool_tap = false;
-		transform.position = new Vector3 (0,-5,0);
-		transform.eulerAngles = new Vector3 (0, 0, -AngleInDegrees);
+		isTurningRight = false;
+		transform.position = StartPosition;
+		transform.eulerAngles = new Vector3 (0f, 0f, -AngleInDegrees);
 		transform.gameObject.SetActive (true);
 	}
 
 	void Update(){
-		if (EventsManager.Instance.CurrentScreen == (int)GameState.Gameplay) {
+		if (EventsManager.Instance.CurrentScreen == GameState.Gameplay) {
 			if (CurrentForwardSpeed < ForwardSpeed)
 				DoSpeedingEffect();
 			MoveForward ();
@@ -76,23 +90,21 @@ public class Controller : MonoBehaviour {
 		transform.Translate (transform.up * CurrentForwardSpeed * Time.deltaTime, Space.World);
 	}
 
-	//Character always moves forward
+	// Handles steering based on current input state
 	private void ChangeDirection(){
-		if (bool_tap) {
-			transform.eulerAngles = new Vector3 (0, 0, Mathf.Lerp (FetchAngle(transform.rotation.eulerAngles.z),AngleInDegrees,Time.deltaTime*6));
-		}
-		else if(!bool_tap){
-			transform.eulerAngles =  new Vector3 (0, 0, Mathf.Lerp (FetchAngle(transform.rotation.eulerAngles.z),-AngleInDegrees,Time.deltaTime*6));
-		}
+		float targetAngle = isTurningRight ? AngleInDegrees : -AngleInDegrees;
+		float currentAngle = FetchAngle(transform.rotation.eulerAngles.z);
+		float newAngle = Mathf.Lerp(currentAngle, targetAngle, Time.deltaTime * TurnSpeed);
+		transform.eulerAngles = new Vector3(0f, 0f, newAngle);
 	}
 
 
 	public void OnClickTapDown(){
-		bool_tap = true;
+		isTurningRight = true;
 	}
 
 	public void OnClickTapUp(){
-		bool_tap = false;
+		isTurningRight = false;
 	}
 
 	//Converting the second quadrant angle values into negative e.g 330 = -30
@@ -112,14 +124,24 @@ public class Controller : MonoBehaviour {
 		return Angle;
 	}
 
-	//Instantiates tail object to the Character's Head (Arrow) on load time
+	// Instantiates a tail object and registers it with this controller
 	void InstantiateTail(){
 		if (tailParts.Count == 0)
 			currentPos = transform.position;		
 		else
 			currentPos = tailParts [tailParts.Count - 1].position;
-		theTailPart = Instantiate (tailPrefab, currentPos + (new Vector3(5,0,0)), Quaternion.Euler(0,0,180)) as GameObject;
+
+		theTailPart = Instantiate (tailPrefab, currentPos + new Vector3(TailInitialSpacing, 0f, 0f), Quaternion.Euler(0f,0f,180f)) as GameObject;
 		theTailPart.transform.SetParent (tailHolder);
+
+		// Keep track of the transform and inform the Tail script of its order
+		var tailComponent = theTailPart.GetComponent<Tail>();
+		if (tailComponent != null)
+		{
+			int newOrder = tailParts.Count;
+			tailComponent.Initialize(this, newOrder);
+		}
+
 		tailParts.Add (theTailPart.transform);
 	}
 
@@ -132,29 +154,45 @@ public class Controller : MonoBehaviour {
 
 	void OnTriggerEnter2D(Collider2D other){
 		if (other.CompareTag("Collectible")) {
-			TheParticlesss.SetActive (false);
-			TheParticlesss.transform.position = other.transform.transform.position;
-			TheParticlesss.SetActive (true);
-			Gamedata.Instance.AddScore (1);
-			if (TailCount < TailPoolCount)
-				AddTail ();
-			AudioManager.Instance.PlayCollectible();
-			other.transform.gameObject.SetActive(false);
+			HandleCollectible(other);
 		}
 		else if (other.CompareTag("Gem")) {
-			Gamedata.Instance.AddGems (1);
-			AudioManager.Instance.PlayGem ();
-			EndlessScroller.Instance.TransitionColor ();
-			other.transform.gameObject.SetActive(false);
+			HandleGem(other);
 		}
 		else if (other.CompareTag("Wall")) {
-			AudioManager.Instance.PlayGameover ();
-			Die();
-			EventsManager.Instance.DisplayGameover ();
+			HandleWall();
 		}
 		else if (other.CompareTag("SpawnNew")) {
-			EndlessScroller.Instance.SpawnNextPrefab ();
+			HandleSpawnNew();
 		}
+	}
+
+	private void HandleCollectible(Collider2D other){
+		TheParticlesss.SetActive (false);
+		TheParticlesss.transform.position = other.transform.position;
+		TheParticlesss.SetActive (true);
+		Gamedata.Instance.AddScore (1);
+		if (TailCount < TailPoolCount)
+			AddTail ();
+		AudioManager.Instance.PlayCollectible();
+		other.transform.gameObject.SetActive(false);
+	}
+
+	private void HandleGem(Collider2D other){
+		Gamedata.Instance.AddGems (1);
+		AudioManager.Instance.PlayGem ();
+		EndlessScroller.Instance.TransitionColor ();
+		other.transform.gameObject.SetActive(false);
+	}
+
+	private void HandleWall(){
+		AudioManager.Instance.PlayGameover ();
+		Die();
+		EventsManager.Instance.DisplayGameover ();
+	}
+
+	private void HandleSpawnNew(){
+		EndlessScroller.Instance.SpawnNextPrefab ();
 	}
 
 	public void Die(){

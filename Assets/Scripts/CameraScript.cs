@@ -13,11 +13,15 @@ public class CameraScript : MonoBehaviour {
 		get { return instance; }
 	}
 	void Awake(){
+		if (instance != null && instance != this) {
+			Destroy(gameObject);
+			return;
+		}
 		instance = this;
 		TheCamera = GetComponent<Camera> ();
 	}
 	void Update(){
-		if (EventsManager.Instance.CurrentScreen == (int)GameState.Gameplay)
+		if (EventsManager.Instance.CurrentScreen == GameState.Gameplay)
 			transform.position = Vector3.Lerp(transform.position, new Vector3(transform.position.x,Player.transform.position.y+Offset,transform.position.z), 0.05f);
 	}
 	public void Init(){

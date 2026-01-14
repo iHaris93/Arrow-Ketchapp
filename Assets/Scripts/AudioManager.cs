@@ -16,6 +16,10 @@ public class AudioManager : MonoBehaviour {
 	public AudioSource BackgroundMusic;
 
 	void Awake(){
+		if (instance != null && instance != this) {
+			Destroy(gameObject);
+			return;
+		}
 		instance = this;
 	}
 

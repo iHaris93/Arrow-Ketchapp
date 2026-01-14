@@ -11,7 +11,7 @@ public enum GameState{
 public class EventsManager : MonoBehaviour {
 
 	[HideInInspector]
-	public int CurrentScreen;
+	public GameState CurrentScreen;
 	//It's better to use a string like that
 	//Score.text = "" is a bad practice as it creates value type variable on backend stack data structure
 	private string EmptyString = "";
@@ -36,8 +36,12 @@ public class EventsManager : MonoBehaviour {
 	}
 
 	void Start(){
+		if (instance != null && instance != this) {
+			Destroy(gameObject);
+			return;
+		}
 		instance = this;
-		CurrentScreen = (int)GameState.Gameover;
+		CurrentScreen = GameState.Gameover;
 		DisplayGameplay ();
 	}
 
@@ -52,8 +56,8 @@ public class EventsManager : MonoBehaviour {
 	}
 
 	public void DisplayGameover(){
-		if (CurrentScreen == (int)GameState.Gameplay ) {
-			CurrentScreen = (int)GameState.Gameover;
+		if (CurrentScreen == GameState.Gameplay ) {
+			CurrentScreen = GameState.Gameover;
 			Gameplay.SetActive (false);
 			Score.text = Gamedata.Instance.Score.ToString ();
 			if (Gamedata.Instance.Score > Gamedata.Instance.BestScore)
@@ -71,7 +75,7 @@ public class EventsManager : MonoBehaviour {
 
 	//Restart On Click listener
 	public void DisplayGameplay(){
-		if (CurrentScreen == (int)GameState.Gameover ) {
+		if (CurrentScreen == GameState.Gameover ) {
 			//Initialize everything to make it go back to its default states
 			this.Init ();
 			AudioManager.Instance.Init ();
@@ -79,7 +83,7 @@ public class EventsManager : MonoBehaviour {
 			Gamedata.Instance.Init ();
 			EndlessScroller.Instance.Init ();
 			CameraScript.Instance.Init ();
-			CurrentScreen = (int)GameState.Gameplay;
+			CurrentScreen = GameState.Gameplay;
 			Gameover.SetActive (false);
 			Gameplay.SetActive (true);
 		}

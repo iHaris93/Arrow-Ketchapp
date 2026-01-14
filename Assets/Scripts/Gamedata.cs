@@ -19,6 +19,10 @@ public class Gamedata : MonoBehaviour {
 	public int GamePlayedCount;
 
 	void Awake(){
+		if (instance != null && instance != this) {
+			Destroy(gameObject);
+			return;
+		}
 		instance = this;
 		if (PlayerPrefs.HasKey("BestScore") && PlayerPrefs.HasKey("Gems") && PlayerPrefs.HasKey("GamePlayedCount")) {
 			BestScore = PlayerPrefs.GetInt ("BestScore");
@@ -47,7 +51,7 @@ public class Gamedata : MonoBehaviour {
 
 	public void AddGems(int Gems){
 		this.Gems += Gems;
-		PlayerPrefs.SetInt ("BestScore",this.Gems);
+		PlayerPrefs.SetInt ("Gems",this.Gems);
 	}
 
 	public void AddScore(int Score){
